@@ -399,7 +399,7 @@
             </button>
             <button
               class="auto-btn stop"
-              @click="stopAutoRotate"
+              @click="stopAutoRotate(false)"
               title="Stop rotation"
             >
               <svg viewBox="0 0 24 24">
@@ -556,9 +556,9 @@
           function startDrag(event) {
             initAudio()
 
-            // Stop auto rotation if dragging
-            if (isAutoRotating.value) {
-              stopAutoRotate()
+            // Stop auto rotation immediately if dragging
+            if (autoAnimationId.value) {
+              stopAutoRotate(true)
             }
 
             event.currentTarget.setPointerCapture(event.pointerId)
@@ -637,11 +637,16 @@
             }
           }
 
-          function stopAutoRotate() {
+          function stopAutoRotate(force = false) {
             isAutoRotating.value = false
             autoDirection.value = 0
             targetSpeed.value = 0
-            // Don't cancel animation - let it decelerate naturally
+
+            if (force) {
+              cancelAnimationFrame(autoAnimationId.value)
+              autoAnimationId.value = null
+              currentSpeed.value = 0
+            }
           }
 
           function autoRotateLoop(currentTime) {
