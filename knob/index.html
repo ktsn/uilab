@@ -83,7 +83,7 @@
       }
 
       .knob-date {
-        color: #6c63ff;
+        position: relative;
         font-family: 'DSEG7 Classic', monospace;
         font-size: 14px;
         font-weight: 400;
@@ -94,6 +94,17 @@
         background: #0a0a14;
         padding: 8px;
         border-radius: 2px;
+      }
+
+      .knob-date-bg {
+        color: rgba(108, 99, 255, 0.2);
+      }
+
+      .knob-date-fg {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        color: #6c63ff;
       }
 
       .knob-ticks {
@@ -280,7 +291,10 @@
               </div>
             </div>
             <div class="knob-inner">
-              <div class="knob-date">{{ formattedDate }}</div>
+              <div class="knob-date">
+                <span class="knob-date-bg" aria-hidden="true">8888-88-88</span>
+                <span class="knob-date-fg">{{ formattedDate }}</span>
+              </div>
             </div>
           </div>
 
@@ -597,7 +611,10 @@
             }
 
             // Continue animation if still moving or target not reached
-            if (Math.abs(currentSpeed.value) > 0.01 || Math.abs(targetSpeed.value) > 0.01) {
+            if (
+              Math.abs(currentSpeed.value) > 0.01 ||
+              Math.abs(targetSpeed.value) > 0.01
+            ) {
               autoAnimationId.value = requestAnimationFrame(autoRotateLoop)
             } else {
               // Fully stopped
