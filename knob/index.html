@@ -384,6 +384,49 @@
           const ACCELERATION = 0.15 // speed increase per frame
           const DECELERATION = 0.1 // speed decrease per frame
 
+          // Audio context for click sound
+          let audioContext = null
+
+          function playClickSound() {
+            if (!audioContext) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)()
+            }
+
+            const bufferSize = audioContext.sampleRate * 0.008 // 8ms
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate)
+            const data = buffer.getChannelData(0)
+
+            // Generate sharp mechanical click using noise burst
+            for (let i = 0; i < bufferSize; i++) {
+              const t = i / bufferSize
+              // Sharp attack, quick decay envelope
+              const envelope = Math.exp(-t * 60)
+              // Filtered noise for metallic click
+              const noise = (Math.random() * 2 - 1)
+              data[i] = noise * envelope * 0.4
+            }
+
+            const source = audioContext.createBufferSource()
+            source.buffer = buffer
+
+            // High-pass filter for sharper sound
+            const highpass = audioContext.createBiquadFilter()
+            highpass.type = 'highpass'
+            highpass.frequency.value = 2000
+
+            // Bandpass for metallic character
+            const bandpass = audioContext.createBiquadFilter()
+            bandpass.type = 'bandpass'
+            bandpass.frequency.value = 4000
+            bandpass.Q.value = 2
+
+            source.connect(highpass)
+            highpass.connect(bandpass)
+            bandpass.connect(audioContext.destination)
+
+            source.start(audioContext.currentTime)
+          }
+
           // Distance thresholds from knob center
           const DAY_THRESHOLD = 100    // Within knob
           const MONTH_THRESHOLD = 150  // Slightly outside
@@ -504,6 +547,7 @@
 
               currentDate.value = newDate
               accumulatedRotation.value = accumulatedRotation.value % 30
+              playClickSound()
             }
 
             lastAngle.value = currentAngle
@@ -574,6 +618,7 @@
 
                 currentDate.value = newDate
                 accumulatedRotation.value = accumulatedRotation.value % 30
+                playClickSound()
               }
 
               autoAnimationId.value = requestAnimationFrame(autoRotateLoop)
