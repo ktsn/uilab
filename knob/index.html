@@ -442,11 +442,12 @@
           const targetSpeed = ref(0)
           const autoAnimationId = ref(null)
           const showAutoControls = ref(false)
+          let lastFrameTime = 0
 
-          // Auto rotation settings
-          const MAX_SPEED = 8 // degrees per frame
-          const ACCELERATION = 0.1 // speed increase per frame
-          const DECELERATION = 0.06 // speed decrease per frame
+          // Auto rotation settings (per second)
+          const MAX_SPEED = 960 // degrees per second
+          const ACCELERATION = 960 // speed increase per second
+          const DECELERATION = 600 // speed decrease per second
 
           // Audio context and cached buffer for click sound
           let audioContext = null
@@ -628,6 +629,7 @@
 
             // Start animation loop if not already running
             if (!autoAnimationId.value) {
+              lastFrameTime = performance.now()
               autoAnimationId.value = requestAnimationFrame(autoRotateLoop)
             }
           }
@@ -639,26 +641,31 @@
             // Don't cancel animation - let it decelerate naturally
           }
 
-          function autoRotateLoop() {
+          function autoRotateLoop(currentTime) {
+            // Calculate delta time in seconds
+            const deltaTime = (currentTime - lastFrameTime) / 1000
+            lastFrameTime = currentTime
+
             // Choose rate based on whether we're accelerating or decelerating
             const rate = isAutoRotating.value ? ACCELERATION : DECELERATION
+            const speedChange = rate * deltaTime
 
             // Smoothly adjust speed towards target
             if (currentSpeed.value < targetSpeed.value) {
               currentSpeed.value = Math.min(
-                currentSpeed.value + rate,
+                currentSpeed.value + speedChange,
                 targetSpeed.value,
               )
             } else if (currentSpeed.value > targetSpeed.value) {
               currentSpeed.value = Math.max(
-                currentSpeed.value - rate,
+                currentSpeed.value - speedChange,
                 targetSpeed.value,
               )
             }
 
             // Apply rotation if moving
-            if (Math.abs(currentSpeed.value) > 0.01) {
-              rotation.value += currentSpeed.value
+            if (Math.abs(currentSpeed.value) > 0.1) {
+              rotation.value += currentSpeed.value * deltaTime
 
               // Calculate current tick index based on absolute rotation
               const currentTickIndex = Math.floor(rotation.value / 30)
@@ -684,8 +691,8 @@
 
             // Continue animation if still moving or target not reached
             if (
-              Math.abs(currentSpeed.value) > 0.01 ||
-              Math.abs(targetSpeed.value) > 0.01
+              Math.abs(currentSpeed.value) > 0.1 ||
+              Math.abs(targetSpeed.value) > 0.1
             ) {
               autoAnimationId.value = requestAnimationFrame(autoRotateLoop)
             } else {
