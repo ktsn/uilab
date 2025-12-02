@@ -239,7 +239,7 @@
         box-shadow: 2px 2px 6px #0d0d1a, -2px -2px 6px #27274a;
       }
 
-      .auto-btn.active {
+      .auto-btn[aria-pressed='true'] {
         box-shadow: inset 4px 4px 12px #0d0d1a, inset -4px -4px 12px #27274a;
       }
 
@@ -310,7 +310,7 @@
         <div class="auto-controls">
           <button
             class="auto-btn"
-            :class="{ active: autoDirection === -1 }"
+            :aria-pressed="autoDirection === -1"
             @click="startAutoRotate(-1)"
             title="Rotate counter-clockwise"
           >
@@ -330,7 +330,7 @@
           </button>
           <button
             class="auto-btn"
-            :class="{ active: autoDirection === 1 }"
+            :aria-pressed="autoDirection === 1"
             @click="startAutoRotate(1)"
             title="Rotate clockwise"
           >
