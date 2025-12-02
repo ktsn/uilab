@@ -328,7 +328,14 @@
           >
             <span class="unit-label">Month</span>
           </div>
-          <div ref="knob" class="knob" @pointerdown="startDrag">
+          <div
+            ref="knob"
+            class="knob"
+            @pointerdown="startDrag"
+            @pointermove="onDrag"
+            @pointerup="stopDrag"
+            @pointercancel="stopDrag"
+          >
             <div
               class="knob-rotating"
               :style="{ transform: `rotate(${rotation}deg)` }"
@@ -424,7 +431,7 @@
     </script>
 
     <script type="module">
-      import { createApp, ref, computed, onUnmounted, useTemplateRef } from 'vue'
+      import { createApp, ref, computed, onUnmounted } from 'vue'
 
       const app = createApp({
         setup() {
@@ -434,7 +441,6 @@
           const lastAngle = ref(null)
           const lastTickIndex = ref(0)
           const unitMode = ref('day')
-          const knobRef = useTemplateRef('knob')
 
           // Auto rotation state
           const isAutoRotating = ref(false)
@@ -562,17 +568,13 @@
             const knobElement = event.currentTarget
             const distance = getDistance(event, knobElement)
             updateUnitMode(distance)
-
-            document.addEventListener('pointermove', onDrag)
-            document.addEventListener('pointerup', stopDrag)
-            document.addEventListener('pointercancel', stopDrag)
           }
 
           function onDrag(event) {
             if (!isDragging.value) return
 
-            const currentAngle = getAngle(event, knobRef.value)
-            const distance = getDistance(event, knobRef.value)
+            const currentAngle = getAngle(event, event.currentTarget)
+            const distance = getDistance(event, event.currentTarget)
 
             // Update unit mode based on distance
             updateUnitMode(distance)
@@ -612,10 +614,6 @@
           function stopDrag() {
             isDragging.value = false
             lastAngle.value = null
-
-            document.removeEventListener('pointermove', onDrag)
-            document.removeEventListener('pointerup', stopDrag)
-            document.removeEventListener('pointercancel', stopDrag)
           }
 
           // Auto rotation functions
@@ -723,6 +721,8 @@
             autoDirection,
             showAutoControls,
             startDrag,
+            onDrag,
+            stopDrag,
             startAutoRotate,
             stopAutoRotate,
           }
