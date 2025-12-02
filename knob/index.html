@@ -570,7 +570,7 @@
               )
             }
 
-            // Apply rotation
+            // Apply rotation if moving
             if (Math.abs(currentSpeed.value) > 0.01) {
               rotation.value += currentSpeed.value
 
@@ -594,7 +594,10 @@
                 lastTickIndex.value = currentTickIndex
                 playClickSound()
               }
+            }
 
+            // Continue animation if still moving or target not reached
+            if (Math.abs(currentSpeed.value) > 0.01 || Math.abs(targetSpeed.value) > 0.01) {
               autoAnimationId.value = requestAnimationFrame(autoRotateLoop)
             } else {
               // Fully stopped
