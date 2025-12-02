@@ -456,6 +456,10 @@
 
           function initAudio() {
             if (audioContext) {
+              // Resume if suspended (iOS requirement)
+              if (audioContext.state === 'suspended') {
+                audioContext.resume()
+              }
               return
             }
 
@@ -483,7 +487,9 @@
           }
 
           function playClickSound() {
-            initAudio()
+            if (!audioContext || audioContext.state !== 'running') {
+              return
+            }
 
             const source = audioContext.createBufferSource()
             source.buffer = clickBuffer
