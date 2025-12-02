@@ -1,16 +1,154 @@
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <title>Knob — UI Lab</title>
     <style>
-      .test {
-        color: red;
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #1a1a2e;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      .knob-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .knob {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #2d2d4a, #252542);
+        box-shadow:
+          8px 8px 24px #0d0d1a,
+          -8px -8px 24px #27274a,
+          inset 2px 2px 4px rgba(255, 255, 255, 0.1);
+        cursor: grab;
+        position: relative;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .knob:active {
+        cursor: grabbing;
+      }
+
+      .knob-inner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #252542, #1e1e38);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .knob-date {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.4;
+        text-align: center;
+      }
+
+      .knob-year {
+        color: #888;
+        font-size: 14px;
+      }
+
+      .knob-indicator {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6c63ff;
+        box-shadow: 0 0 10px #6c63ff;
+      }
+
+      .knob-ticks {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .knob-tick {
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        width: 2px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        transform-origin: 50% 94px;
+      }
+
+      .knob-tick.major {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      h1 {
+        color: #fff;
+        font-size: 14px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        opacity: 0.6;
       }
     </style>
   </head>
   <body>
     <div id="app">
-      <p class="test">{{ test }}</p>
+      <div class="knob-container">
+        <h1>Date Picker</h1>
+        <div
+          class="knob"
+          :style="{ transform: `rotate(${rotation}deg)` }"
+          @mousedown="startDrag"
+          @touchstart="startDrag"
+        >
+          <div class="knob-ticks">
+            <div
+              v-for="i in 12"
+              :key="i"
+              class="knob-tick"
+              :class="{ major: i % 3 === 0 }"
+              :style="{ transform: `translateX(-50%) rotate(${(i - 1) * 30}deg)` }"
+            ></div>
+          </div>
+          <div class="knob-indicator"></div>
+          <div
+            class="knob-inner"
+            :style="{ transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }"
+          >
+            <div class="knob-date">
+              {{ formattedDate }}
+            </div>
+            <div class="knob-year">{{ year }}</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script type="importmap">
@@ -22,14 +160,93 @@
     </script>
 
     <script type="module">
-      import { createApp, ref } from 'vue'
+      import { createApp, ref, computed } from 'vue'
 
       const app = createApp({
         setup() {
-          const test = ref('Hello')
+          const currentDate = ref(new Date())
+          const rotation = ref(0)
+          const isDragging = ref(false)
+          const lastAngle = ref(null)
+          const accumulatedRotation = ref(0)
+
+          const formattedDate = computed(() => {
+            const month = currentDate.value.getMonth() + 1
+            const day = currentDate.value.getDate()
+            return `${month}月${day}日`
+          })
+
+          const year = computed(() => {
+            return currentDate.value.getFullYear()
+          })
+
+          function getAngle(event, element) {
+            const rect = element.getBoundingClientRect()
+            const centerX = rect.left + rect.width / 2
+            const centerY = rect.top + rect.height / 2
+
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY
+
+            const x = clientX - centerX
+            const y = clientY - centerY
+
+            return Math.atan2(y, x) * (180 / Math.PI)
+          }
+
+          function startDrag(event) {
+            event.preventDefault()
+            isDragging.value = true
+            lastAngle.value = getAngle(event, event.currentTarget)
+
+            document.addEventListener('mousemove', onDrag)
+            document.addEventListener('mouseup', stopDrag)
+            document.addEventListener('touchmove', onDrag)
+            document.addEventListener('touchend', stopDrag)
+          }
+
+          function onDrag(event) {
+            if (!isDragging.value) return
+
+            const knobElement = document.querySelector('.knob')
+            const currentAngle = getAngle(event, knobElement)
+
+            let delta = currentAngle - lastAngle.value
+
+            // Handle angle wrap-around
+            if (delta > 180) delta -= 360
+            if (delta < -180) delta += 360
+
+            rotation.value += delta
+            accumulatedRotation.value += delta
+
+            // Change date every 30 degrees of rotation
+            const dayChange = Math.floor(accumulatedRotation.value / 30)
+            if (dayChange !== 0) {
+              const newDate = new Date(currentDate.value)
+              newDate.setDate(newDate.getDate() + dayChange)
+              currentDate.value = newDate
+              accumulatedRotation.value = accumulatedRotation.value % 30
+            }
+
+            lastAngle.value = currentAngle
+          }
+
+          function stopDrag() {
+            isDragging.value = false
+            lastAngle.value = null
+
+            document.removeEventListener('mousemove', onDrag)
+            document.removeEventListener('mouseup', stopDrag)
+            document.removeEventListener('touchmove', onDrag)
+            document.removeEventListener('touchend', stopDrag)
+          }
 
           return {
-            test
+            rotation,
+            formattedDate,
+            year,
+            startDrag
           }
         }
       })
