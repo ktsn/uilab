@@ -328,7 +328,7 @@
           >
             <span class="unit-label">Month</span>
           </div>
-          <div class="knob" @pointerdown="startDrag">
+          <div ref="knob" class="knob" @pointerdown="startDrag">
             <div
               class="knob-rotating"
               :style="{ transform: `rotate(${rotation}deg)` }"
@@ -424,7 +424,7 @@
     </script>
 
     <script type="module">
-      import { createApp, ref, computed, onUnmounted } from 'vue'
+      import { createApp, ref, computed, onUnmounted, useTemplateRef } from 'vue'
 
       const app = createApp({
         setup() {
@@ -434,7 +434,7 @@
           const lastAngle = ref(null)
           const lastTickIndex = ref(0)
           const unitMode = ref('day')
-          const knobCenter = ref({ x: 0, y: 0 })
+          const knobRef = useTemplateRef('knob')
 
           // Auto rotation state
           const isAutoRotating = ref(false)
@@ -555,7 +555,6 @@
               stopAutoRotate()
             }
 
-            event.preventDefault()
             event.currentTarget.setPointerCapture(event.pointerId)
             isDragging.value = true
             lastAngle.value = getAngle(event, event.currentTarget)
@@ -572,9 +571,8 @@
           function onDrag(event) {
             if (!isDragging.value) return
 
-            const knobElement = document.querySelector('.knob')
-            const currentAngle = getAngle(event, knobElement)
-            const distance = getDistance(event, knobElement)
+            const currentAngle = getAngle(event, knobRef.value)
+            const distance = getDistance(event, knobRef.value)
 
             // Update unit mode based on distance
             updateUnitMode(distance)
