@@ -264,7 +264,7 @@
           >
             <span class="unit-label">Month</span>
           </div>
-          <div class="knob" @mousedown="startDrag" @touchstart="startDrag">
+          <div class="knob" @pointerdown="startDrag">
             <div
               class="knob-rotating"
               :style="{ transform: `rotate(${rotation}deg)` }"
@@ -435,15 +435,8 @@
             const centerX = rect.left + rect.width / 2
             const centerY = rect.top + rect.height / 2
 
-            const clientX = event.touches
-              ? event.touches[0].clientX
-              : event.clientX
-            const clientY = event.touches
-              ? event.touches[0].clientY
-              : event.clientY
-
-            const x = clientX - centerX
-            const y = clientY - centerY
+            const x = event.clientX - centerX
+            const y = event.clientY - centerY
 
             return Math.atan2(y, x) * (180 / Math.PI)
           }
@@ -453,15 +446,8 @@
             const centerX = rect.left + rect.width / 2
             const centerY = rect.top + rect.height / 2
 
-            const clientX = event.touches
-              ? event.touches[0].clientX
-              : event.clientX
-            const clientY = event.touches
-              ? event.touches[0].clientY
-              : event.clientY
-
-            const x = clientX - centerX
-            const y = clientY - centerY
+            const x = event.clientX - centerX
+            const y = event.clientY - centerY
 
             return Math.sqrt(x * x + y * y)
           }
@@ -481,6 +467,7 @@
             }
 
             event.preventDefault()
+            event.currentTarget.setPointerCapture(event.pointerId)
             isDragging.value = true
             lastAngle.value = getAngle(event, event.currentTarget)
             accumulatedRotation.value = 0
@@ -489,10 +476,9 @@
             const distance = getDistance(event, knobElement)
             updateUnitMode(distance)
 
-            document.addEventListener('mousemove', onDrag)
-            document.addEventListener('mouseup', stopDrag)
-            document.addEventListener('touchmove', onDrag)
-            document.addEventListener('touchend', stopDrag)
+            document.addEventListener('pointermove', onDrag)
+            document.addEventListener('pointerup', stopDrag)
+            document.addEventListener('pointercancel', stopDrag)
           }
 
           function onDrag(event) {
@@ -540,10 +526,9 @@
             isDragging.value = false
             lastAngle.value = null
 
-            document.removeEventListener('mousemove', onDrag)
-            document.removeEventListener('mouseup', stopDrag)
-            document.removeEventListener('touchmove', onDrag)
-            document.removeEventListener('touchend', stopDrag)
+            document.removeEventListener('pointermove', onDrag)
+            document.removeEventListener('pointerup', stopDrag)
+            document.removeEventListener('pointercancel', stopDrag)
           }
 
           // Auto rotation functions
