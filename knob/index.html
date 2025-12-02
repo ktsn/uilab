@@ -1,6 +1,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/dseg7-classic@5.2.5/400.css"
+    />
     <title>Knob — UI Lab</title>
     <style>
       * {
@@ -68,11 +72,14 @@
       }
 
       .knob-date {
-        color: #fff;
+        color: #6c63ff;
+        font-family: 'DSEG7 Classic', monospace;
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 400;
+        letter-spacing: 2px;
         line-height: 1.4;
         text-align: center;
+        text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
       }
 
       .knob-ticks {
@@ -397,12 +404,8 @@
           const MONTH_THRESHOLD = 150 // Slightly outside
 
           const formattedDate = computed(() => {
-            const formatter = Intl.DateTimeFormat(undefined, {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            })
-            return formatter.format(currentDate.value)
+            // Extract YYYY-MM-DD part
+            return currentDate.value.toISOString().slice(0, 10)
           })
 
           const unitLabel = computed(() => {
