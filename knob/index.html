@@ -376,14 +376,16 @@
           const ACCELERATION = 0.1 // speed increase per frame
           const DECELERATION = 0.06 // speed decrease per frame
 
-          // Audio context for click sound
+          // Audio context and cached buffer for click sound
           let audioContext = null
+          let clickBuffer = null
 
-          function playClickSound() {
-            if (!audioContext) {
-              audioContext = new (window.AudioContext ||
-                window.webkitAudioContext)()
+          function initAudio() {
+            if (audioContext) {
+              return
             }
+
+            audioContext = new window.AudioContext()
 
             const bufferSize = audioContext.sampleRate * 0.008 // 8ms
             const buffer = audioContext.createBuffer(
@@ -403,25 +405,16 @@
               data[i] = noise * envelope * 0.4
             }
 
+            clickBuffer = buffer
+          }
+
+          function playClickSound() {
+            initAudio()
+
             const source = audioContext.createBufferSource()
-            source.buffer = buffer
-
-            // High-pass filter for sharper sound
-            const highpass = audioContext.createBiquadFilter()
-            highpass.type = 'highpass'
-            highpass.frequency.value = 2000
-
-            // Bandpass for metallic character
-            const bandpass = audioContext.createBiquadFilter()
-            bandpass.type = 'bandpass'
-            bandpass.frequency.value = 4000
-            bandpass.Q.value = 2
-
-            source.connect(highpass)
-            highpass.connect(bandpass)
-            bandpass.connect(audioContext.destination)
-
-            source.start(audioContext.currentTime)
+            source.buffer = clickBuffer
+            source.connect(audioContext.destination)
+            source.start()
           }
 
           // Distance thresholds from knob center
@@ -475,6 +468,8 @@
           }
 
           function startDrag(event) {
+            initAudio()
+
             // Stop auto rotation if dragging
             if (isAutoRotating.value) {
               stopAutoRotate()
@@ -551,6 +546,8 @@
             if (autoDirection.value === direction && isAutoRotating.value) {
               return
             }
+
+            initAudio()
 
             isAutoRotating.value = true
             autoDirection.value = direction
