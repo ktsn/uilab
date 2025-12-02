@@ -24,6 +24,12 @@
         gap: 24px;
       }
 
+      .knob-wrapper {
+        position: relative;
+        width: 200px;
+        height: 200px;
+      }
+
       .knob {
         width: 200px;
         height: 200px;
@@ -116,36 +122,131 @@
         margin: 0;
         opacity: 0.6;
       }
+
+      /* Unit ring styles */
+      .unit-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 2px solid transparent;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease, border-color 0.2s ease;
+      }
+
+      .unit-ring.active {
+        opacity: 1;
+      }
+
+      .unit-ring.day {
+        width: 240px;
+        height: 240px;
+        border-color: #6c63ff;
+        box-shadow: 0 0 15px rgba(108, 99, 255, 0.5);
+      }
+
+      .unit-ring.month {
+        width: 300px;
+        height: 300px;
+        border-color: #ff6b9d;
+        box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+      }
+
+
+      .unit-label {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a2e;
+        padding: 2px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 10px;
+      }
+
+      .unit-ring.day .unit-label {
+        color: #6c63ff;
+      }
+
+      .unit-ring.month .unit-label {
+        color: #ff6b9d;
+      }
+
+      .current-unit {
+        position: absolute;
+        bottom: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.2s ease;
+      }
+
+      .current-unit.active {
+        opacity: 1;
+      }
+
+      .current-unit.day {
+        color: #6c63ff;
+      }
+
+      .current-unit.month {
+        color: #ff6b9d;
+      }
     </style>
   </head>
   <body>
     <div id="app">
       <div class="knob-container">
         <h1>Date Picker</h1>
-        <div
-          class="knob"
-          :style="{ transform: `rotate(${rotation}deg)` }"
-          @mousedown="startDrag"
-          @touchstart="startDrag"
-        >
-          <div class="knob-ticks">
-            <div
-              v-for="i in 12"
-              :key="i"
-              class="knob-tick"
-              :class="{ major: i % 3 === 0 }"
-              :style="{ transform: `translateX(-50%) rotate(${(i - 1) * 30}deg)` }"
-            ></div>
+        <div class="knob-wrapper">
+          <!-- Unit rings -->
+          <div class="unit-ring day" :class="{ active: isDragging && unitMode === 'day' }">
+            <span class="unit-label">Day</span>
           </div>
-          <div class="knob-indicator"></div>
+          <div class="unit-ring month" :class="{ active: isDragging && unitMode === 'month' }">
+            <span class="unit-label">Month</span>
+          </div>
           <div
-            class="knob-inner"
-            :style="{ transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }"
+            class="knob"
+            :style="{ transform: `rotate(${rotation}deg)` }"
+            @mousedown="startDrag"
+            @touchstart="startDrag"
           >
-            <div class="knob-date">
-              {{ formattedDate }}
+            <div class="knob-ticks">
+              <div
+                v-for="i in 12"
+                :key="i"
+                class="knob-tick"
+                :class="{ major: i % 3 === 0 }"
+                :style="{ transform: `translateX(-50%) rotate(${(i - 1) * 30}deg)` }"
+              ></div>
             </div>
-            <div class="knob-year">{{ year }}</div>
+            <div class="knob-indicator"></div>
+            <div
+              class="knob-inner"
+              :style="{ transform: `translate(-50%, -50%) rotate(${-rotation}deg)` }"
+            >
+              <div class="knob-date">
+                {{ formattedDate }}
+              </div>
+              <div class="knob-year">{{ year }}</div>
+            </div>
+          </div>
+
+          <div
+            class="current-unit"
+            :class="[unitMode, { active: isDragging }]"
+          >
+            {{ unitLabel }}
           </div>
         </div>
       </div>
@@ -169,6 +270,12 @@
           const isDragging = ref(false)
           const lastAngle = ref(null)
           const accumulatedRotation = ref(0)
+          const unitMode = ref('day')
+          const knobCenter = ref({ x: 0, y: 0 })
+
+          // Distance thresholds from knob center
+          const DAY_THRESHOLD = 100    // Within knob
+          const MONTH_THRESHOLD = 150  // Slightly outside
 
           const formattedDate = computed(() => {
             const month = currentDate.value.getMonth() + 1
@@ -178,6 +285,14 @@
 
           const year = computed(() => {
             return currentDate.value.getFullYear()
+          })
+
+          const unitLabel = computed(() => {
+            switch (unitMode.value) {
+              case 'day': return '± 1 Day'
+              case 'month': return '± 1 Month'
+              default: return ''
+            }
           })
 
           function getAngle(event, element) {
@@ -194,10 +309,37 @@
             return Math.atan2(y, x) * (180 / Math.PI)
           }
 
+          function getDistance(event, element) {
+            const rect = element.getBoundingClientRect()
+            const centerX = rect.left + rect.width / 2
+            const centerY = rect.top + rect.height / 2
+
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY
+
+            const x = clientX - centerX
+            const y = clientY - centerY
+
+            return Math.sqrt(x * x + y * y)
+          }
+
+          function updateUnitMode(distance) {
+            if (distance >= MONTH_THRESHOLD) {
+              unitMode.value = 'month'
+            } else {
+              unitMode.value = 'day'
+            }
+          }
+
           function startDrag(event) {
             event.preventDefault()
             isDragging.value = true
             lastAngle.value = getAngle(event, event.currentTarget)
+            accumulatedRotation.value = 0
+
+            const knobElement = event.currentTarget
+            const distance = getDistance(event, knobElement)
+            updateUnitMode(distance)
 
             document.addEventListener('mousemove', onDrag)
             document.addEventListener('mouseup', stopDrag)
@@ -210,6 +352,10 @@
 
             const knobElement = document.querySelector('.knob')
             const currentAngle = getAngle(event, knobElement)
+            const distance = getDistance(event, knobElement)
+
+            // Update unit mode based on distance
+            updateUnitMode(distance)
 
             let delta = currentAngle - lastAngle.value
 
@@ -221,10 +367,19 @@
             accumulatedRotation.value += delta
 
             // Change date every 30 degrees of rotation
-            const dayChange = Math.floor(accumulatedRotation.value / 30)
-            if (dayChange !== 0) {
+            const unitChange = Math.floor(accumulatedRotation.value / 30)
+            if (unitChange !== 0) {
               const newDate = new Date(currentDate.value)
-              newDate.setDate(newDate.getDate() + dayChange)
+
+              switch (unitMode.value) {
+                case 'day':
+                  newDate.setDate(newDate.getDate() + unitChange)
+                  break
+                case 'month':
+                  newDate.setMonth(newDate.getMonth() + unitChange)
+                  break
+              }
+
               currentDate.value = newDate
               accumulatedRotation.value = accumulatedRotation.value % 30
             }
@@ -246,6 +401,9 @@
             rotation,
             formattedDate,
             year,
+            isDragging,
+            unitMode,
+            unitLabel,
             startDrag
           }
         }
