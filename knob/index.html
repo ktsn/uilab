@@ -532,7 +532,7 @@
             accumulatedRotation.value += delta
 
             // Change date every 30 degrees of rotation
-            const unitChange = Math.floor(accumulatedRotation.value / 30)
+            const unitChange = Math.trunc(accumulatedRotation.value / 30)
             if (unitChange !== 0) {
               const newDate = new Date(currentDate.value)
 
@@ -603,7 +603,7 @@
               accumulatedRotation.value += currentSpeed.value
 
               // Change date every 30 degrees of rotation
-              const unitChange = Math.floor(accumulatedRotation.value / 30)
+              const unitChange = Math.trunc(accumulatedRotation.value / 30)
               if (unitChange !== 0) {
                 const newDate = new Date(currentDate.value)
 
