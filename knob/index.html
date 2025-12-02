@@ -373,8 +373,8 @@
 
           // Auto rotation settings
           const MAX_SPEED = 8 // degrees per frame
-          const ACCELERATION = 0.15 // speed increase per frame
-          const DECELERATION = 0.1 // speed decrease per frame
+          const ACCELERATION = 0.1 // speed increase per frame
+          const DECELERATION = 0.06 // speed decrease per frame
 
           // Audio context for click sound
           let audioContext = null
@@ -571,15 +571,18 @@
           }
 
           function autoRotateLoop() {
+            // Choose rate based on whether we're accelerating or decelerating
+            const rate = isAutoRotating.value ? ACCELERATION : DECELERATION
+
             // Smoothly adjust speed towards target
             if (currentSpeed.value < targetSpeed.value) {
               currentSpeed.value = Math.min(
-                currentSpeed.value + ACCELERATION,
+                currentSpeed.value + rate,
                 targetSpeed.value,
               )
             } else if (currentSpeed.value > targetSpeed.value) {
               currentSpeed.value = Math.max(
-                currentSpeed.value - DECELERATION,
+                currentSpeed.value - rate,
                 targetSpeed.value,
               )
             }
